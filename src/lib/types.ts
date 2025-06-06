@@ -1,28 +1,38 @@
+// Define a common field type for consistency
+type FieldType = 'text' | 'array' | 'textarea' | 'html' | 'image';
+
+// Define a common field interface for reuse
+interface BaseField {
+  name: string;
+  label: string;
+  description?: string;
+  type: FieldType;
+  required: boolean;
+  placeholder?: string;
+  validation?: {
+    minLength?: number;
+    maxLength?: number;
+    pattern?: string;
+    custom?: (value: string) => boolean;
+  };
+}
+
 // TODO: Define types 
 
 export interface ExcelRow {
   [key: string]: string;
 }
 
-export interface PromptField {
+export interface PromptField extends BaseField {
   id: string;
-  label: string;
-  type: 'text' | 'textarea' | 'array';
-  placeholder: string;
   excelColumn?: string;
-  required: boolean;
 }
 
-export interface TemplateField {
+export interface TemplateField extends BaseField {
   id: string;
-  name: string;
-  label: string;
-  description?: string;
-  type: 'text' | 'array' | 'textarea';
-  required: boolean;
   excelColumn?: string;
   isManualEntry: boolean;
-  placeholder?: string;
+  defaultValue?: string | string[];
 }
 
 export interface TemplateMapping {
@@ -30,16 +40,7 @@ export interface TemplateMapping {
   name: string;
   description?: string;
   content: string;
-  fields: Array<{
-    id: string;
-    name: string;
-    label: string;
-    description?: string;
-    type: 'text' | 'array';
-    required: boolean;
-    excelColumn?: string;
-    isManualEntry: boolean;
-  }>;
+  fields: Array<TemplateField>;
   version: number;
   createdAt?: string;
   updatedAt?: string;
@@ -73,13 +74,7 @@ export interface Template {
   name: string;
   description?: string;
   content: string;
-  fields: Array<{
-    name: string;
-    label: string;
-    description?: string;
-    type: 'text' | 'array';
-    required: boolean;
-  }>;
+  fields: Array<BaseField>;
   version: number;
   createdAt?: string;
   updatedAt?: string;

@@ -70,7 +70,7 @@ export default function PromptEditor({ template, data, onSave }: PromptEditorPro
           key={field.id}
           value={value}
           onChange={(e) => updateField(field.id, e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={field.placeholder || "Enter your text here..."}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
           rows={3}
         />
@@ -84,19 +84,20 @@ export default function PromptEditor({ template, data, onSave }: PromptEditorPro
           type="text"
           value={value}
           onChange={(e) => updateField(field.id, e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={field.placeholder || "Enter comma-separated values"}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
         />
       );
     }
 
+    // Default case for 'text' type
     return (
       <div key={field.id} className="space-y-1">
         <input
           type="text"
           value={value}
           onChange={(e) => updateField(field.id, e.target.value)}
-          placeholder={field.placeholder}
+          placeholder={field.placeholder || "Enter text here..."}
           className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
         />
         {field.excelColumn && excelValue && (

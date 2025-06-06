@@ -31,7 +31,7 @@ export function TemplateManager({
         description: '',
         content: '',
         fields: [],
-        version: '1.0.0',
+        version: 1,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       });
@@ -42,8 +42,13 @@ export function TemplateManager({
   const handleSave = async (template: TemplateMapping) => {
     console.log('TemplateManager: Received template to save:', template);
     try {
-      const templateToSave = {
+      const templateToSave: TemplateMapping = {
         ...template,
+        name: template.name,
+        description: template.description || '',
+        content: template.content,
+        fields: template.fields,
+        version: template.version,
         updatedAt: new Date().toISOString()
       };
       await onSave(templateToSave);
@@ -55,7 +60,9 @@ export function TemplateManager({
     }
   };
 
-  const deleteTemplate = (templateId: string) => {
+  const deleteTemplate = (templateId: string | undefined) => {
+    if (!templateId) return;
+    
     if (templates.length === 1) {
       alert('Cannot delete the last template');
       return;
@@ -127,7 +134,7 @@ export function TemplateManager({
                   </button>
                   {template.id && (
                     <button
-                      onClick={() => deleteTemplate(template.id)}
+                      onClick={() => template.id && deleteTemplate(template.id)}
                       className="text-gray-400 hover:text-red-500"
                       title="Delete template"
                     >

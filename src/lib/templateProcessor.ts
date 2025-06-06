@@ -11,7 +11,12 @@ export function processTemplate(template: TemplateMapping, excelRow: ExcelRow): 
     if (field.excelColumn && excelRow[field.excelColumn]) {
       value = excelRow[field.excelColumn];
     } else if (field.defaultValue) {
-      value = field.defaultValue;
+      // Handle both string and string array default values
+      if (Array.isArray(field.defaultValue)) {
+        value = field.defaultValue.join(', ');
+      } else {
+        value = field.defaultValue;
+      }
     }
 
     // Handle different field types

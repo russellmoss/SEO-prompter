@@ -19,6 +19,7 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const [newField, setNewField] = useState<Omit<TemplateField, 'id'>>({
+    name: '',
     label: '',
     type: 'text',
     required: false,
@@ -95,6 +96,7 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
 
     // Reset new field form
     setNewField({
+      name: '',
       label: '',
       type: 'text',
       required: false,
@@ -216,28 +218,14 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
   };
 
   const handleSave = () => {
-    console.log('Starting save process...');
-    console.log('Current editedTemplate:', editedTemplate);
-
-    if (!editedTemplate.name.trim()) {
-      setError('Template name is required');
-      return;
-    }
-
-    // Ensure all required fields are present
-    const templateToSave: TemplateMapping = {
-      id: editedTemplate.id,
-      name: editedTemplate.name.trim(),
-      description: editedTemplate.description.trim(),
-      content: editedTemplate.content.trim(),
-      fields: editedTemplate.fields,
-      version: editedTemplate.version || '1.0.0', // Ensure version is set
-      createdAt: editedTemplate.createdAt,
-      updatedAt: new Date().toISOString()
+    const updatedTemplate: TemplateMapping = {
+      ...template,
+      name: template.name,
+      description: template.description || '',
+      content: editedTemplate.content,
+      version: Number(template.version) + 1
     };
-
-    console.log('Template to save:', templateToSave);
-    onSave(templateToSave);
+    onSave(updatedTemplate);
   };
 
   // Modal component for expanded field view
