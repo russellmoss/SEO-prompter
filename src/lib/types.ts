@@ -15,13 +15,14 @@ export interface PromptField {
 
 export interface TemplateField {
   id: string;
+  name: string;
   label: string;
-  type: 'text' | 'textarea' | 'array' | 'html' | 'image';
+  description?: string;
+  type: 'text' | 'array' | 'textarea';
   required: boolean;
   excelColumn?: string;
-  placeholder?: string;
-  description?: string;
   isManualEntry: boolean;
+  placeholder?: string;
 }
 
 export interface TemplateMapping {

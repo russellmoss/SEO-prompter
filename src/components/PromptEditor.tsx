@@ -4,6 +4,15 @@ import { useState, useEffect } from 'react';
 import { Copy, Check } from 'lucide-react';
 import { TemplateMapping, ExcelRow } from '@/lib/types';
 
+interface Field {
+  id: string;
+  label: string;
+  type: 'text' | 'array' | 'textarea';
+  excelColumn?: string;
+  value: string | string[];
+  onChange: (value: string | string[]) => void;
+}
+
 interface PromptEditorProps {
   template: TemplateMapping;
   data: ExcelRow;
