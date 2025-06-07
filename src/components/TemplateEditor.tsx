@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Copy, Check, Plus, Trash2, Info, Maximize2, X } from 'lucide-react';
+import { Copy, Check, Plus, Trash2, Info, Maximize2, X, Pencil } from 'lucide-react';
 import { TemplateMapping, ExcelRow, TemplateField } from '@/lib/types';
 
 interface TemplateEditorProps {
@@ -16,6 +16,7 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
   const [copied, setCopied] = useState(false);
   const [cursorPosition, setCursorPosition] = useState<number | null>(null);
   const [expandedField, setExpandedField] = useState<TemplateField | null>(null);
+  const [editingField, setEditingField] = useState<TemplateField | null>(null);
   const contentTextareaRef = useRef<HTMLTextAreaElement>(null);
   const modalRef = useRef<HTMLDivElement>(null);
   const [newField, setNewField] = useState<Omit<TemplateField, 'id'>>({
@@ -206,13 +207,22 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
     return (
       <div key={field.id} className="relative">
         {fieldContent}
-        <button
-          onClick={() => setExpandedField(field)}
-          className="absolute bottom-2 right-2 text-gray-400 hover:text-gray-600"
-          title="Expand field"
-        >
-          <Maximize2 className="h-4 w-4" />
-        </button>
+        <div className="absolute bottom-2 right-2 flex space-x-2">
+          <button
+            onClick={() => setEditingField(field)}
+            className="text-gray-400 hover:text-gray-600"
+            title="Edit field"
+          >
+            <Pencil className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setExpandedField(field)}
+            className="text-gray-400 hover:text-gray-600"
+            title="Expand field"
+          >
+            <Maximize2 className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     );
   };
@@ -220,10 +230,13 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
   const handleSave = () => {
     const updatedTemplate: TemplateMapping = {
       ...template,
-      name: template.name,
-      description: template.description || '',
+      name: editedTemplate.name,
+      description: editedTemplate.description || '',
       content: editedTemplate.content,
-      version: Number(template.version) + 1
+      fields: editedTemplate.fields,
+      version: Number(template.version || 1),
+      createdAt: template.createdAt || new Date().toISOString(),
+      updatedAt: new Date().toISOString()
     };
     onSave(updatedTemplate);
   };
@@ -306,6 +319,135 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
                 )}
               </div>
             )}
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  // Modal component for editing field properties
+  const EditFieldModal = () => {
+    if (!editingField) return null;
+
+    const handleFieldUpdate = (updatedField: TemplateField) => {
+      setEditedTemplate(prev => ({
+        ...prev,
+        fields: prev.fields.map(f => f.id === updatedField.id ? updatedField : f)
+      }));
+      setEditingField(null);
+    };
+
+    return (
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
+        onClick={(e) => {
+          if (e.target === modalRef.current) {
+            setEditingField(null);
+          }
+        }}
+        ref={modalRef}
+      >
+        <div className="bg-white rounded-lg p-6 w-11/12 max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="flex justify-between items-start mb-4">
+            <h3 className="text-lg font-medium">Edit Field Properties</h3>
+            <button
+              onClick={() => setEditingField(null)}
+              className="text-gray-400 hover:text-gray-600"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Label</label>
+              <input
+                type="text"
+                value={editingField.label}
+                onChange={(e) => setEditingField({ ...editingField, label: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Type</label>
+              <select
+                value={editingField.type}
+                onChange={(e) => setEditingField({ ...editingField, type: e.target.value as any })}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="text">Text</option>
+                <option value="textarea">Text Area</option>
+                <option value="array">Array</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Excel Column</label>
+              <select
+                value={editingField.excelColumn}
+                onChange={(e) => setEditingField({ ...editingField, excelColumn: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select a column</option>
+                {columnLetters.map(letter => (
+                  <option key={letter} value={letter}>{letter}</option>
+                ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Placeholder</label>
+              <input
+                type="text"
+                value={editingField.placeholder}
+                onChange={(e) => setEditingField({ ...editingField, placeholder: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Description</label>
+              <textarea
+                value={editingField.description}
+                onChange={(e) => setEditingField({ ...editingField, description: e.target.value })}
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                rows={3}
+              />
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="required"
+                checked={editingField.required}
+                onChange={(e) => setEditingField({ ...editingField, required: e.target.checked })}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="required" className="ml-2 block text-sm text-gray-700">
+                Required
+              </label>
+            </div>
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                id="isManualEntry"
+                checked={editingField.isManualEntry}
+                onChange={(e) => setEditingField({ ...editingField, isManualEntry: e.target.checked })}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="isManualEntry" className="ml-2 block text-sm text-gray-700">
+                Manual Entry Only
+              </label>
+            </div>
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => setEditingField(null)}
+                className="px-4 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={() => handleFieldUpdate(editingField)}
+                className="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -509,6 +651,9 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
 
       {/* Expanded Field Modal */}
       <ExpandedFieldModal />
+
+      {/* Edit Field Modal */}
+      <EditFieldModal />
 
       {/* Generated Prompt Preview */}
       <div className="mt-6">

@@ -48,7 +48,7 @@ export function TemplateManager({
         description: template.description || '',
         content: template.content,
         fields: template.fields,
-        version: template.version,
+        version: Number(template.version || 1),
         updatedAt: new Date().toISOString()
       };
       await onSave(templateToSave);
