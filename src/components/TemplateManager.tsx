@@ -1,9 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Copy } from 'lucide-react';
 import { TemplateMapping } from '@/lib/types';
 import TemplateEditor from './TemplateEditor';
+import { templateService } from '@/lib/templateService';
 
 interface TemplateManagerProps {
   templates: TemplateMapping[];
@@ -20,6 +21,7 @@ export function TemplateManager({
 }: TemplateManagerProps) {
   const [isEditing, setIsEditing] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<TemplateMapping | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const startEdit = (template?: TemplateMapping) => {
     if (template) {
@@ -70,6 +72,21 @@ export function TemplateManager({
     
     if (window.confirm('Are you sure you want to delete this template?')) {
       onDelete(templateId);
+    }
+  };
+
+  const handleDuplicate = async (templateId: string) => {
+    if (!templateId) return;
+    
+    try {
+      setIsDuplicating(true);
+      const duplicatedTemplate = await templateService.duplicateTemplate(templateId);
+      await onSave(duplicatedTemplate);
+    } catch (error) {
+      console.error('Error duplicating template:', error);
+      alert('Failed to duplicate template. Please try again.');
+    } finally {
+      setIsDuplicating(false);
     }
   };
 
@@ -133,13 +150,23 @@ export function TemplateManager({
                     <Edit2 className="h-4 w-4" />
                   </button>
                   {template.id && (
-                    <button
-                      onClick={() => template.id && deleteTemplate(template.id)}
-                      className="text-gray-400 hover:text-red-500"
-                      title="Delete template"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </button>
+                    <>
+                      <button
+                        onClick={() => handleDuplicate(template.id)}
+                        className="text-gray-400 hover:text-blue-500"
+                        title="Duplicate template"
+                        disabled={isDuplicating}
+                      >
+                        <Copy className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => template.id && deleteTemplate(template.id)}
+                        className="text-gray-400 hover:text-red-500"
+                        title="Delete template"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
                   )}
                 </div>
               </div>

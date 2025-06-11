@@ -3,6 +3,20 @@ import { ExcelRow } from './types';
 
 export class ExcelParser {
   /**
+   * Converts a column number to Excel-style column reference (A, B, ..., Z, AA, AB, etc.)
+   * @param columnNumber The column number (0-based)
+   * @returns string The Excel-style column reference
+   */
+  private static getColumnLetter(columnNumber: number): string {
+    let columnLetter = '';
+    while (columnNumber >= 0) {
+      columnLetter = String.fromCharCode(65 + (columnNumber % 26)) + columnLetter;
+      columnNumber = Math.floor(columnNumber / 26) - 1;
+    }
+    return columnLetter;
+  }
+
+  /**
    * Parses an Excel file and returns an array of ExcelRow objects.
    * @param file The Excel file to parse
    * @returns Promise<ExcelRow[]>
@@ -35,8 +49,8 @@ export class ExcelParser {
       const rows = data.slice(1).map((row: any) => {
         const rowData: Record<string, string> = {};
         headers.forEach((header, index) => {
-          // Convert column index to letter (A, B, C, etc.)
-          const columnLetter = String.fromCharCode(65 + index);
+          // Convert column index to Excel-style column reference
+          const columnLetter = this.getColumnLetter(index);
           const value = row[index];
           rowData[columnLetter] = value ? String(value) : '';
         });

@@ -111,5 +111,57 @@ export const templateService = {
       console.error('Error in deleteTemplate:', error);
       throw error;
     }
+  },
+
+  async duplicateTemplate(templateId: string): Promise<TemplateMapping> {
+    try {
+      // First, get the template to duplicate
+      const { data: template, error: fetchError } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('id', templateId)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching template to duplicate:', fetchError);
+        throw fetchError;
+      }
+
+      if (!template) {
+        throw new Error('Template not found');
+      }
+
+      // Create a new template object with "Copy" appended to the name
+      const newTemplate = {
+        ...template,
+        id: undefined, // Remove the ID so Supabase generates a new one
+        name: `${template.name} Copy`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      // Save the new template
+      const { data: savedTemplate, error: saveError } = await supabase
+        .from('templates')
+        .insert(newTemplate)
+        .select()
+        .single();
+
+      if (saveError) {
+        console.error('Error saving duplicated template:', saveError);
+        throw saveError;
+      }
+
+      // Transform the response back to our application format
+      return {
+        ...savedTemplate,
+        fields: typeof savedTemplate.fields === 'string' ? JSON.parse(savedTemplate.fields) : savedTemplate.fields,
+        createdAt: savedTemplate.created_at,
+        updatedAt: savedTemplate.updated_at
+      };
+    } catch (error) {
+      console.error('Error in duplicateTemplate:', error);
+      throw error;
+    }
   }
 }; 

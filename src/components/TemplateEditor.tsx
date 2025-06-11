@@ -31,16 +31,33 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Generate column letters A-Z
-  const columnLetters = Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i));
+  // Generate column letters A-Z, AA-AZ, etc.
+  const generateColumnLetters = (count: number = 26) => {
+    const letters: string[] = [];
+    for (let i = 0; i < count; i++) {
+      let columnLetter = '';
+      let num = i;
+      while (num >= 0) {
+        columnLetter = String.fromCharCode(65 + (num % 26)) + columnLetter;
+        num = Math.floor(num / 26) - 1;
+      }
+      letters.push(columnLetter);
+    }
+    return letters;
+  };
+
+  const columnLetters = generateColumnLetters(52); // Support up to AZ
 
   useEffect(() => {
     // Initialize field values from Excel data
     const initialValues: Record<string, string> = {};
+    console.log('Initializing field values from Excel data:', data);
     editedTemplate.fields.forEach(field => {
+      console.log('Processing field:', field.label, 'Excel Column:', field.excelColumn);
       if (!field.isManualEntry && field.excelColumn) {
         // Get the value from the Excel data using the column letter
         const value = data[field.excelColumn];
+        console.log('Excel value for', field.label, ':', value);
         if (value) {
           if (field.type === 'array') {
             // Handle array type fields
@@ -55,6 +72,7 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
         initialValues[field.id] = '';
       }
     });
+    console.log('Initialized field values:', initialValues);
     setFieldValues(initialValues);
   }, [editedTemplate.fields, data]);
 
@@ -156,6 +174,13 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
   const renderField = (field: TemplateMapping['fields'][0]) => {
     const value = fieldValues[field.id] || '';
     const excelValue = !field.isManualEntry && field.excelColumn ? data[field.excelColumn] : '';
+    console.log('Rendering field:', field.label, {
+      fieldId: field.id,
+      value,
+      excelValue,
+      excelColumn: field.excelColumn,
+      isManualEntry: field.isManualEntry
+    });
 
     const fieldContent = (
       <>
