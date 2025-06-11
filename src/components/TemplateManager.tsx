@@ -152,7 +152,7 @@ export function TemplateManager({
                   {template.id && (
                     <>
                       <button
-                        onClick={() => handleDuplicate(template.id)}
+                        onClick={() => template.id && handleDuplicate(template.id)}
                         className="text-gray-400 hover:text-blue-500"
                         title="Duplicate template"
                         disabled={isDuplicating}
