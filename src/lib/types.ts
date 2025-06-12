@@ -89,4 +89,39 @@ export interface SavedPrompt {
   rowIndex: number;
   createdAt: string;
   updatedAt: string;
+}
+
+// Content Calendar Types
+export interface ContentCalendarTemplate {
+  id?: string;
+  name: string;
+  description?: string;
+  prompt: string;
+  fields: TemplateField[];
+  outputFields: OutputField[];
+  version: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export interface OutputField {
+  id: string;
+  name: string;
+  label: string;
+  description?: string;
+  type: 'text' | 'array' | 'textarea';
+}
+
+export interface AnalysisResult {
+  id: string;
+  templateId: string;
+  rowIndex: number;
+  prompt: string;
+  response: string;
+  parsedResponse?: Record<string, any>;
+  createdAt: string;
+}
+
+export interface ContentCalendarRow {
+  [key: string]: string;
 } 

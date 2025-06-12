@@ -152,12 +152,20 @@ export default function Home() {
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold">Excel Prompt Generator</h1>
-          <Link
-            href="/saved-prompts"
-            className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            View Saved Prompts
-          </Link>
+          <div className="flex space-x-4">
+            <Link
+              href="/content-calendar"
+              className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
+            >
+              Content Calendar Analysis
+            </Link>
+            <Link
+              href="/saved-prompts"
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              View Saved Prompts
+            </Link>
+          </div>
         </div>
 
         {error && (
