@@ -41,7 +41,7 @@ export class EnhancedExcelParser {
     }
   }
 
-  private static analyzeContentHolistically(rows: EnhancedExcelRow[]): ContentAnalysisResult {
+  public static analyzeContentHolistically(rows: EnhancedExcelRow[]): ContentAnalysisResult {
     return {
       totalPosts: rows.length,
       publishedPosts: rows.filter(row => row.published_url).length,
