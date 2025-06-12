@@ -169,8 +169,26 @@ export const enhancedPromptService = {
       templateId: '',
       excelData: excelData as any, // Type assertion to handle the index signature issue
       currentRowIndex: 0,
-      semanticAnalysis: analysis.semanticAnalysis,
-      internalLinkSuggestions: analysis.internalLinkOpportunities,
+      semanticAnalysis: {
+        similarPosts: analysis.semanticClusters.map(cluster => ({
+          rowIndex: cluster.mainPost.index,
+          title: cluster.mainPost.row.B || '',
+          similarity: 1, // Placeholder, or compute average similarity
+          reasons: [
+            `Cluster theme: ${cluster.theme}`,
+            `Related posts: ${cluster.relatedPosts.map(rp => rp.row.B).join(', ')}`
+          ]
+        })),
+        uniquenessScore: 1, // Placeholder, or compute as needed
+        suggestedDifferentiators: [] // Placeholder, or compute as needed
+      },
+      internalLinkSuggestions: analysis.internalLinkOpportunities.map(opp => ({
+        url: opp.url || opp.title || '',
+        anchorText: opp.title || '',
+        relevanceScore: 1, // Placeholder, or compute as needed
+        clusterCategory: 'General', // Placeholder, or derive from cluster
+        reason: 'Suggested by holistic analysis' // Placeholder
+      })),
       externalLinkSuggestions: [],
       photoSuggestions: [],
       contentRequirements: '',
