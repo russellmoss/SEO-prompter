@@ -4,21 +4,23 @@ import { useState, useEffect } from 'react';
 import { TemplateMapping, ExcelRow, SavedPrompt } from '@/lib/types';
 import { ExcelParser } from '@/lib/excelParser';
 import { TemplateManager } from '@/components/TemplateManager';
-import ExcelUploader from '@/components/ExcelUploader';
+import FileManager from '@/components/FileManager';
 import PromptTabs from '@/components/PromptTabs';
 import { templateService } from '@/lib/templateService';
 import { savedPromptService } from '@/lib/savedPromptService';
 import { supabase } from '@/lib/supabase';
+import { fileStorageService, StoredFile } from '@/lib/fileStorageService';
 import Link from 'next/link';
 
 export default function Home() {
   const [templates, setTemplates] = useState<TemplateMapping[]>([]);
   const [activeTemplate, setActiveTemplate] = useState<TemplateMapping | null>(null);
   const [excelData, setExcelData] = useState<ExcelRow[]>([]);
-  const [activeTab, setActiveTab] = useState<'templates' | 'prompts'>('templates');
+  const [activeTab, setActiveTab] = useState<'files' | 'templates' | 'prompts'>('files');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editingPrompt, setEditingPrompt] = useState<SavedPrompt | undefined>();
+  const [selectedFile, setSelectedFile] = useState<StoredFile | null>(null);
 
   useEffect(() => {
     // Test Supabase connection
@@ -125,23 +127,36 @@ export default function Home() {
     }
   };
 
-  const handleExcelUpload = async (file: File) => {
+  const handleFileSelect = async (file: StoredFile) => {
     try {
-      const data = await ExcelParser.parseFile(file);
+      setLoading(true);
+      setSelectedFile(file);
+      
+      // Fetch file content from blob URL
+      const arrayBuffer = await fileStorageService.getFileContent(file.blob_url);
+      const blob = new Blob([arrayBuffer]);
+      const fileObj = new File([blob], file.original_filename, {
+        type: file.mime_type
+      });
+      
+      // Parse the file
+      const data = await ExcelParser.parseFile(fileObj);
       setExcelData(data);
-      setActiveTab('prompts');
+      setActiveTab('templates');
     } catch (error) {
-      console.error('Error parsing Excel file:', error);
-      setError('Failed to parse Excel file. Please try again.');
+      console.error('Error loading file:', error);
+      setError('Failed to load Excel file');
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (loading) {
+  if (loading && activeTab === 'files') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading templates...</p>
+          <p className="mt-4 text-gray-600">Loading...</p>
         </div>
       </div>
     );
@@ -151,7 +166,10 @@ export default function Home() {
     <main className="min-h-screen bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-2xl font-bold">Excel Prompt Generator</h1>
+          <div>
+            <h1 className="text-2xl font-bold">Enhanced SEO Prompt Generator</h1>
+            <p className="text-gray-600">With persistent file storage</p>
+          </div>
           <div className="flex space-x-4">
             <Link
               href="/content-calendar"
@@ -174,11 +192,18 @@ export default function Home() {
           </div>
         )}
 
-        <div className="mb-8">
-          <ExcelUploader onUpload={handleExcelUpload} />
-        </div>
-
+        {/* Tab Navigation */}
         <div className="flex space-x-4 mb-8">
+          <button
+            onClick={() => setActiveTab('files')}
+            className={`px-4 py-2 rounded-md ${
+              activeTab === 'files'
+                ? 'bg-blue-600 text-white'
+                : 'bg-gray-200 text-gray-700'
+            }`}
+          >
+            Excel Files
+          </button>
           <button
             onClick={() => setActiveTab('templates')}
             className={`px-4 py-2 rounded-md ${
@@ -186,6 +211,7 @@ export default function Home() {
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
+            disabled={!selectedFile}
           >
             Templates
           </button>
@@ -196,25 +222,53 @@ export default function Home() {
                 ? 'bg-blue-600 text-white'
                 : 'bg-gray-200 text-gray-700'
             }`}
+            disabled={!selectedFile || !excelData.length}
           >
-            Prompts
+            Generate Prompts
           </button>
         </div>
 
-        {activeTab === 'templates' ? (
-          <TemplateManager
-            templates={templates}
-            onSelect={handleTemplateSelect}
-            onSave={handleTemplateSave}
-            onDelete={handleTemplateDelete}
-          />
-        ) : (
-          <PromptTabs
-            data={excelData}
-            template={activeTemplate}
-            initialSavedPrompt={editingPrompt}
-          />
+        {/* Selected File Indicator */}
+        {selectedFile && activeTab !== 'files' && (
+          <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-between">
+            <span className="text-blue-700">
+              Using: {selectedFile.original_filename}
+            </span>
+            <button
+              onClick={() => setActiveTab('files')}
+              className="text-blue-600 hover:text-blue-700 text-sm"
+            >
+              Change file
+            </button>
+          </div>
         )}
+
+        {/* Tab Content */}
+        <div className="bg-white rounded-lg shadow p-6">
+          {activeTab === 'files' && (
+            <FileManager
+              onFileSelect={handleFileSelect}
+              selectedFileId={selectedFile?.id}
+            />
+          )}
+          
+          {activeTab === 'templates' && selectedFile && (
+            <TemplateManager
+              templates={templates}
+              onSelect={handleTemplateSelect}
+              onSave={handleTemplateSave}
+              onDelete={handleTemplateDelete}
+            />
+          )}
+          
+          {activeTab === 'prompts' && selectedFile && excelData.length > 0 && (
+            <PromptTabs
+              data={excelData}
+              template={activeTemplate}
+              initialSavedPrompt={editingPrompt}
+            />
+          )}
+        </div>
       </div>
     </main>
   );

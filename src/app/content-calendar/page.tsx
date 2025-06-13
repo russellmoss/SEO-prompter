@@ -6,7 +6,8 @@ import { FileSpreadsheet, Plus, ChevronLeft } from 'lucide-react';
 import { ContentCalendarTemplate, ContentCalendarRow } from '@/lib/types';
 import { ExcelParser } from '@/lib/excelParser';
 import { contentCalendarService } from '@/lib/contentCalendarService';
-import ExcelUploader from '@/components/ExcelUploader';
+import { fileStorageService, StoredFile } from '@/lib/fileStorageService';
+import FileManager from '@/components/FileManager';
 import ContentCalendarTemplateEditor from '@/components/ContentCalendarTemplateEditor';
 import ContentCalendarAnalysis from '@/components/ContentCalendarAnalysis';
 
@@ -17,7 +18,8 @@ export default function ContentCalendarPage() {
   const [isEditingTemplate, setIsEditingTemplate] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<ContentCalendarTemplate | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState<'upload' | 'analyze'>('upload');
+  const [activeStep, setActiveStep] = useState<'files' | 'analyze'>('files');
+  const [selectedFile, setSelectedFile] = useState<StoredFile | null>(null);
 
   useEffect(() => {
     loadTemplates();
@@ -128,13 +130,26 @@ Consider the pillar category and ensure the content is unique compared to other 
     updatedAt: new Date().toISOString()
   });
 
-  const handleExcelUpload = async (file: File) => {
+  const handleFileSelect = async (file: StoredFile) => {
     try {
-      const data = await ExcelParser.parseFile(file);
+      setLoading(true);
+      setSelectedFile(file);
+      
+      // Fetch file content from blob URL
+      const arrayBuffer = await fileStorageService.getFileContent(file.blob_url);
+      const blob = new Blob([arrayBuffer]);
+      const fileObj = new File([blob], file.original_filename, {
+        type: file.mime_type
+      });
+      
+      // Parse the file
+      const data = await ExcelParser.parseFile(fileObj);
       setCalendarData(data);
       setActiveStep('analyze');
     } catch (error) {
-      console.error('Error parsing Excel file:', error);
+      console.error('Error loading file:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -182,7 +197,7 @@ Consider the pillar category and ensure the content is unique compared to other 
     setIsEditingTemplate(true);
   };
 
-  if (loading) {
+  if (loading && activeStep === 'files') {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
@@ -228,13 +243,13 @@ Consider the pillar category and ensure the content is unique compared to other 
 
         {/* Step Indicator */}
         <div className="flex items-center justify-center mb-8">
-          <div className={`flex items-center ${activeStep === 'upload' ? 'text-blue-600' : 'text-gray-400'}`}>
+          <div className={`flex items-center ${activeStep === 'files' ? 'text-blue-600' : 'text-gray-400'}`}>
             <div className={`w-8 h-8 rounded-full flex items-center justify-center border-2 ${
-              activeStep === 'upload' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'
+              activeStep === 'files' ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300'
             }`}>
               1
             </div>
-            <span className="ml-2 font-medium">Upload Calendar</span>
+            <span className="ml-2 font-medium">Select Calendar</span>
           </div>
           <div className="w-16 h-0.5 bg-gray-300 mx-4"></div>
           <div className={`flex items-center ${activeStep === 'analyze' ? 'text-blue-600' : 'text-gray-400'}`}>
@@ -247,94 +262,83 @@ Consider the pillar category and ensure the content is unique compared to other 
           </div>
         </div>
 
-        {activeStep === 'upload' ? (
-          <div className="space-y-8">
+        {activeStep === 'files' ? (
+          <div className="bg-white rounded-lg shadow p-6">
+            <FileManager
+              onFileSelect={handleFileSelect}
+              selectedFileId={selectedFile?.id}
+            />
+          </div>
+        ) : (
+          <div className="space-y-6">
+            {/* Selected File Indicator */}
+            {selectedFile && (
+              <div className="p-3 bg-blue-50 border border-blue-200 rounded-md flex items-center justify-between">
+                <span className="text-blue-700">
+                  Using: {selectedFile.original_filename}
+                </span>
+                <button
+                  onClick={() => setActiveStep('files')}
+                  className="text-blue-600 hover:text-blue-700 text-sm"
+                >
+                  Change file
+                </button>
+              </div>
+            )}
+
             {/* Template Selection */}
             <div className="bg-white rounded-lg shadow p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">Select Analysis Template</h2>
+                <h2 className="text-lg font-semibold">Select Template</h2>
                 <button
                   onClick={() => startEditTemplate()}
-                  className="flex items-center px-3 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="flex items-center px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                 >
                   <Plus className="h-4 w-4 mr-1" />
                   New Template
                 </button>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {templates.map((template) => (
+                {templates.map(template => (
                   <div
                     key={template.id}
-                    className={`p-4 rounded-lg border cursor-pointer transition-colors ${
+                    className={`border rounded-lg p-4 cursor-pointer transition-all ${
                       selectedTemplate?.id === template.id
                         ? 'border-blue-500 bg-blue-50'
                         : 'border-gray-200 hover:border-gray-300'
                     }`}
                     onClick={() => setSelectedTemplate(template)}
                   >
-                    <h3 className="font-medium">{template.name}</h3>
-                    <p className="text-sm text-gray-500 mt-1">{template.description}</p>
-                    <div className="mt-3 flex justify-between">
+                    <h3 className="font-medium mb-2">{template.name}</h3>
+                    <p className="text-sm text-gray-600 mb-4">{template.description}</p>
+                    <div className="flex justify-end space-x-2">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           startEditTemplate(template);
                         }}
-                        className="text-sm text-blue-600 hover:text-blue-700"
+                        className="text-gray-600 hover:text-gray-800"
                       >
                         Edit
                       </button>
-                      {template.id && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTemplateDelete(template.id!);
-                          }}
-                          className="text-sm text-red-600 hover:text-red-700"
-                        >
-                          Delete
-                        </button>
-                      )}
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTemplateDelete(template.id!);
+                        }}
+                        className="text-red-600 hover:text-red-800"
+                      >
+                        Delete
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
             </div>
 
-            {/* Excel Upload */}
-            {selectedTemplate && (
-              <div className="bg-white rounded-lg shadow p-6">
-                <h2 className="text-lg font-semibold mb-4">Upload Content Calendar</h2>
-                <ExcelUploader onUpload={handleExcelUpload} />
-                
-                {/* Field Mapping Info */}
-                <div className="mt-6 p-4 bg-gray-50 rounded-lg">
-                  <h3 className="font-medium mb-2">Expected Excel Columns:</h3>
-                  <ul className="space-y-1">
-                    {selectedTemplate.fields.map(field => (
-                      <li key={field.id} className="text-sm text-gray-600">
-                        Column {field.excelColumn}: {field.label}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-            )}
-          </div>
-        ) : (
-          <div className="bg-white rounded-lg shadow p-6">
-            <button
-              onClick={() => {
-                setActiveStep('upload');
-                setCalendarData([]);
-              }}
-              className="mb-4 text-sm text-gray-600 hover:text-gray-800"
-            >
-              ← Change template or upload different file
-            </button>
-            
-            {selectedTemplate && (
+            {/* Analysis Component */}
+            {selectedTemplate && calendarData.length > 0 && (
               <ContentCalendarAnalysis
                 template={selectedTemplate}
                 data={calendarData}
