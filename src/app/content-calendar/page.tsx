@@ -54,9 +54,14 @@ Keywords: {{keywords}}
 Pillar: {{pillar}}
 
 Please provide suggestions for:
-1. External Links: 3 high-authority external links relevant to the topic
-2. Internal Links: 2-3 internal links to other Milea Estate pages
-3. Photo Descriptions: 5 photos with descriptive names
+1. External Links: 3 high-authority external links relevant to the topic.  DO NOT halluncinate external links.  If you cannot find a relevant link, do not include one.
+2. Internal Links: 2-3 internal links to other Milea Estate pages.  DO NOT halluncinate internal links.  If you cannot find a relevant link, do not include one.  Do use semantic analysis of the excel file to find relevant links related to pillars, keywords, title, semantic tags, and content description.
+3. Photo Descriptions: 5 photos with descriptive names, including:
+   - Optimal filename (format: descriptive-keywords-milea-estate.jpg)
+   - Alt text (descriptive, keyword-rich, under 125 characters)
+   - Meta title for WordPress (optimized for SEO, under 60 characters)
+   - Meta description for WordPress (compelling description, under 160 characters)
+   -The photo file names, alt text, meta title and meta description should all relate to the keywords and pillar category
 4. Content Requirements: Specific requirements to avoid semantic similarity with other posts
 
 Consider the pillar category and ensure the content is unique compared to other posts in the same category.`,
@@ -115,7 +120,7 @@ Consider the pillar category and ensure the content is unique compared to other 
         name: 'photo_descriptions',
         label: 'Photo Descriptions',
         type: 'array',
-        description: '5 descriptive photo names'
+        description: '5 photos with filename, alt text, meta title, and meta description'
       },
       {
         id: 'content_requirements',

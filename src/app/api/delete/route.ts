@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { put } from '@vercel/blob';
+import { del } from '@vercel/blob';
 
 export async function POST(request: NextRequest) {
   try {
-    const formData = await request.formData();
-    const file = formData.get('file') as File;
+    const { url } = await request.json();
     
-    if (!file) {
+    if (!url) {
       return NextResponse.json(
-        { error: 'No file provided' },
+        { error: 'No file URL provided' },
         { status: 400 }
       );
     }
@@ -21,17 +20,15 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const blob = await put(file.name, file, {
-      access: 'public',
-      addRandomSuffix: true,
+    await del(url, {
       token: process.env.BLOB_READ_WRITE_TOKEN
     });
 
-    return NextResponse.json(blob);
+    return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Upload error:', error);
+    console.error('Delete error:', error);
     return NextResponse.json(
-      { error: 'Upload failed', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Delete failed', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

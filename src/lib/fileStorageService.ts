@@ -1,4 +1,3 @@
-import { del } from '@vercel/blob';
 import { supabase } from './supabase';
 
 export interface StoredFile {
@@ -26,7 +25,10 @@ class FileStorageService {
         body: formData,
       });
       
-      if (!response.ok) throw new Error('Upload failed');
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Upload failed');
+      }
       
       const blob = await response.json();
       
@@ -97,8 +99,19 @@ class FileStorageService {
       const file = await this.getFile(id);
       if (!file) return false;
 
-      // Delete from Vercel Blob
-      await del(file.blob_url);
+      // Delete from Vercel Blob via API route
+      const response = await fetch('/api/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: file.blob_url }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Failed to delete file from blob storage');
+      }
 
       // Delete from Supabase
       const { error } = await supabase
