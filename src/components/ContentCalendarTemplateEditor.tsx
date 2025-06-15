@@ -176,7 +176,15 @@ export default function ContentCalendarTemplateEditor({
               className="px-3 py-2 border border-gray-300 rounded-md"
             >
               <option value="">Select Excel Column</option>
-              {Array.from({ length: 26 }, (_, i) => String.fromCharCode(65 + i)).map(letter => (
+              {Array.from({ length: 40 }, (_, i) => {
+                let columnLetter = '';
+                let num = i;
+                while (num >= 0) {
+                  columnLetter = String.fromCharCode(65 + (num % 26)) + columnLetter;
+                  num = Math.floor(num / 26) - 1;
+                }
+                return columnLetter;
+              }).map(letter => (
                 <option key={letter} value={letter}>Column {letter}</option>
               ))}
             </select>

@@ -32,7 +32,7 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
   const [error, setError] = useState<string | null>(null);
 
   // Generate column letters A-Z, AA-AZ, etc.
-  const generateColumnLetters = (count: number = 26) => {
+  const generateColumnLetters = (count: number = 40) => {
     const letters: string[] = [];
     for (let i = 0; i < count; i++) {
       let columnLetter = '';
@@ -46,7 +46,7 @@ export default function TemplateEditor({ template, data, onSave }: TemplateEdito
     return letters;
   };
 
-  const columnLetters = generateColumnLetters(52); // Support up to AZ
+  const columnLetters = generateColumnLetters(40); // This will generate A through AN
 
   useEffect(() => {
     // Initialize field values from Excel data
